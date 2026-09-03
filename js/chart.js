@@ -67,7 +67,7 @@ export function drawChart(logText, canvasElem) {
       scales: {
         x: {
           stacked: true,
-          position: 'top',
+          position: 'bottom',
           ticks: { stepSize: 1, color: '#a0a0b0' },
           grid: { color: '#33333d' }
         },
