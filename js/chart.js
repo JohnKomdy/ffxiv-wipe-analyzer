@@ -32,7 +32,10 @@ function parseLog(text) {
 
   const datasets = mechanics.map(mech => ({
     label: mech,
-    data: labels.map(player => matrix[player][mech] || 0)
+    data: labels.map(player => matrix[player][mech] || 0),
+    maxBarThickness: 28,
+    barPercentage: 0.6,
+    categoryPercentage: 0.8
   }));
 
   return { labels, datasets };
@@ -60,7 +63,13 @@ export function drawChart(logText, canvasElem) {
         },
         y: {
           stacked: true,
-          ticks: { color: '#e1e1e6' },
+          ticks: { 
+            color: '#e1e1e6',
+            font: {
+              size: 15,
+              weight: 'bold'
+            }
+          },
           grid: { display: false }
         }
       },
