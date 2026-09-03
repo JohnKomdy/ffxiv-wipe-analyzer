@@ -4,6 +4,9 @@ import { drawChart } from './chart.js';
 let { players, mechanics } = getInitialData();
 let selectedPlayers = new Set();
 let selectedMechanic = null;
+
+// Track the native file handle for direct disk overwrites (Edge / Chrome / Opera)
+let fileHandle = null; 
 let masterFileContent = '';
 
 const charButtonsElem = document.getElementById('charButtons');
@@ -121,8 +124,24 @@ document.getElementById('shareSettingsBtn').addEventListener('click', async () =
   }
 });
 
-// File I/O
-document.getElementById('loadLogBtn').addEventListener('click', () => fileInput.click());
+// File I/O (Supports File System Access API in MS Edge / Chromium)
+document.getElementById('loadLogBtn').addEventListener('click', async () => {
+  if ('showOpenFilePicker' in window) {
+    try {
+      [fileHandle] = await window.showOpenFilePicker({
+        types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+      });
+      const file = await fileHandle.getFile();
+      masterFileContent = await file.text();
+      statusText.textContent = `Linked File: ${file.name}`;
+    } catch {
+      // User cancelled picker
+    }
+  } else {
+    // Firefox / Safari fallback
+    fileInput.click();
+  }
+});
 
 fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -136,15 +155,55 @@ fileInput.addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-document.getElementById('endSessionBtn').addEventListener('click', () => {
+document.getElementById('endSessionBtn').addEventListener('click', async () => {
   const currentSession = logTextarea.value.trim();
   if (!currentSession) return;
 
   const separator = '-----------------------------------------------------------';
-  const fullContent = masterFileContent.trim()
-    ? `${masterFileContent.trim()}\n${separator}\n${currentSession}`
+  let existingText = masterFileContent;
+
+  // If a handle exists, fetch fresh disk content before appending
+  if (fileHandle) {
+    try {
+      const diskFile = await fileHandle.getFile();
+      existingText = await diskFile.text();
+    } catch {
+      // Keep existing memory copy if reading fails
+    }
+  }
+
+  const fullContent = existingText.trim()
+    ? `${existingText.trim()}\n${separator}\n${currentSession}`
     : currentSession;
 
+  // Direct Overwrite using Native File System API (Edge/Chrome)
+  if ('showSaveFilePicker' in window || fileHandle) {
+    try {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: 'wipe_log.txt',
+          types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+        });
+      }
+
+      const writable = await fileHandle.createWritable();
+      await writable.write(fullContent);
+      await writable.close();
+
+      const diskFile = await fileHandle.getFile();
+      statusText.textContent = `Linked File: ${diskFile.name}`;
+      masterFileContent = fullContent;
+      logTextarea.value = '';
+      updateGraph();
+      alert('Session successfully appended and saved directly to disk!');
+      return;
+    } catch {
+      // Fallback if user cancels save prompt
+      return;
+    }
+  }
+
+  // Fallback anchor download for unsupported browsers
   const blob = new Blob([fullContent], { type: 'text/plain;charset=utf-8' });
   const downloadLink = document.createElement('a');
   downloadLink.href = URL.createObjectURL(blob);
