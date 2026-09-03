@@ -1,10 +1,6 @@
-const DEFAULT_PLAYERS = ["Nafi", "Valuri", "Rumpy", "Ventus", "Ven", "Rym", "Lily", "Reila", "PF1", "PF2", "Tanks", "DPS", "Healers"];
-const DEFAULT_MECHANICS = [
-  "Arrows", "Blackhole", "DC", "Damage Down", "Forsaken",
-  "Graven 1", "Graven 2", "Graven 3", "Knockback", "Laser",
-  "Limitcut", "Mit Miss", "Overkill", "Slap Happy", "Stomps",
-  "Tankbuster", "Tethers"
-];
+// Default arrays are empty so you can build your roster and mechanics from scratch
+const DEFAULT_PLAYERS = [];
+const DEFAULT_MECHANICS = [];
 
 export function getInitialData() {
   if (window.location.hash) {
