@@ -33,9 +33,9 @@ function parseLog(text) {
   const datasets = mechanics.map(mech => ({
     label: mech,
     data: labels.map(player => matrix[player][mech] || 0),
-    maxBarThickness: 24,
-    barPercentage: 0.9,
-    categoryPercentage: 0.9
+    maxBarThickness: 26,
+    barPercentage: 0.85,
+    categoryPercentage: 0.85
   }));
 
   return { labels, datasets };
@@ -43,14 +43,14 @@ function parseLog(text) {
 
 export function drawChart(logText, canvasElem) {
   const { labels, datasets } = parseLog(logText);
-
-  // Dynamically shrink the canvas container so bars stack tightly at the top
   const container = canvasElem.parentElement;
+
+  const rowHeight = 45; 
+  const topPadding = 40; 
+  const totalHeight = labels.length > 0 ? (labels.length * rowHeight) + topPadding : 200;
+
   if (container) {
-    const rowHeight = 36;
-    const minHeight = 400;
-    const calculatedHeight = Math.max(labels.length * rowHeight + 60, minHeight);
-    container.style.height = labels.length > 0 ? `${calculatedHeight}px` : '400px';
+    container.style.height = `${totalHeight}px`;
   }
 
   if (chartInstance) {
@@ -64,11 +64,6 @@ export function drawChart(logText, canvasElem) {
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: {
-          bottom: 10
-        }
-      },
       scales: {
         x: {
           stacked: true,
