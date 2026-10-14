@@ -222,7 +222,7 @@
 
     .chart-layout {
       display: flex;
-      gap: 20px;
+      gap: 12px;
     }
 
     .svg-container {
@@ -235,9 +235,9 @@
       overflow: visible;
     }
 
-    /* Unbordered, minimalist legend container */
+    /* Compact Legend Width */
     .legend {
-      width: 180px;
+      width: 120px;
       padding: 0;
       height: fit-content;
       max-height: 600px;
@@ -248,7 +248,7 @@
     .legend-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 6px;
       font-size: 12px;
     }
@@ -309,7 +309,7 @@
       <div class="chart-header">Player Fault Breakdown</div>
       <div class="chart-layout">
         <div class="svg-container">
-          <svg id="chartSvg" viewBox="0 0 600 250"></svg>
+          <svg id="chartSvg" viewBox="0 0 680 250"></svg>
         </div>
         <div class="legend">
           <div id="legendBox"></div>
@@ -331,7 +331,6 @@
     let charList = JSON.parse(localStorage.getItem('ffxiv_charList')) || defaultCharList;
     let mechList = JSON.parse(localStorage.getItem('ffxiv_mechList')) || defaultMechList;
 
-    // Expanded 32-color palette matching original dark/desaturated theme tones
     const palette = [
       '#41658a', '#8a4b56', '#9c6b3b', '#857e4b', '#486e6d', '#58437d', '#71757a',
       '#3f707a', '#88587d', '#517a63', '#a17852', '#7a4242', '#785f37', '#585e8a',
@@ -605,8 +604,8 @@
       const legendContainer = document.getElementById('legendBox');
 
       if (playerOrder.length === 0) {
-        svg.setAttribute('viewBox', '0 0 600 200');
-        svg.innerHTML = '<text x="300" y="100" font-size="14" fill="#666677" text-anchor="middle">No current session entries yet. Select players and a mechanic to add data.</text>';
+        svg.setAttribute('viewBox', '0 0 680 200');
+        svg.innerHTML = '<text x="340" y="100" font-size="14" fill="#666677" text-anchor="middle">No current session entries yet. Select players and a mechanic to add data.</text>';
         legendContainer.innerHTML = '';
         return;
       }
@@ -619,9 +618,9 @@
       const xMax = Math.max(3, Math.ceil(maxErrors));
 
       const rowHeight = 32;
-      const labelWidth = 90;
-      const chartWidth = 500;
-      const svgWidth = 620;
+      const labelWidth = 80;
+      const chartWidth = 660; // Expanded chart width
+      const svgWidth = 680;
       const svgHeight = Math.max(200, playerOrder.length * rowHeight + 60);
 
       svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
