@@ -235,22 +235,15 @@
       overflow: visible;
     }
 
+    /* Unbordered, minimalist legend container */
     .legend {
-      width: 240px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px;
+      width: 180px;
+      padding: 0;
       height: fit-content;
       max-height: 600px;
       overflow-y: auto;
-      background: rgba(0,0,0,0.2);
-    }
-    .legend-title {
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 14px;
-      color: var(--text);
+      background: transparent;
+      border: none;
     }
     .legend-row {
       display: flex;
@@ -260,9 +253,8 @@
       font-size: 12px;
     }
     .legend-box {
-      width: 14px;
+      width: 12px;
       height: 12px;
-      border: 1px solid rgba(255,255,255,0.2);
       flex-shrink: 0;
     }
 
@@ -320,7 +312,6 @@
           <svg id="chartSvg" viewBox="0 0 600 250"></svg>
         </div>
         <div class="legend">
-          <div class="legend-title">Mechanic Legend</div>
           <div id="legendBox"></div>
         </div>
       </div>
@@ -616,7 +607,7 @@
       if (playerOrder.length === 0) {
         svg.setAttribute('viewBox', '0 0 600 200');
         svg.innerHTML = '<text x="300" y="100" font-size="14" fill="#666677" text-anchor="middle">No current session entries yet. Select players and a mechanic to add data.</text>';
-        legendContainer.innerHTML = '<span style="color:#666677; font-size: 12px; display: block; text-align: center;">No active mechanics</span>';
+        legendContainer.innerHTML = '';
         return;
       }
 
