@@ -3,61 +3,727 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FFXIV Live Wipe Graph Generator</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>FFXIV Dancing Mad - Live Wipe Graph Generator</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --card: #1e1e24;
+      --border: #33333d;
+      --text: #e1e1e6;
+      --text-muted: #a0a0b0;
+      --chip-bg: #2a2a32;
+      --chip-border: #444452;
+      --accent-char: #3b82f6;
+      --accent-mech: #10b981;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .app-container {
+      max-width: 1500px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .file-status-banner {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .chip {
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: var(--text);
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .chip:hover { background: #383845; }
+
+    .chip.selected-char {
+      background: var(--accent-char);
+      border-color: var(--accent-char);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .chip.selected-mech {
+      background: var(--accent-mech);
+      border-color: var(--accent-mech);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .control-row input {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: var(--chip-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .control-row input:focus {
+      outline: 1px solid var(--accent-char);
+    }
+    .btn-secondary {
+      background: #4b5563;
+      color: #fff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btn-secondary:hover { background: #374151; }
+
+    .btn-share {
+      width: 100%;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+    .btn-share:hover { background: #2563eb; }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .add-btn {
+      width: 100%;
+      background: var(--accent-mech);
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .add-btn:hover { background: #059669; }
+
+    .action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .action-btn {
+      flex: 1;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .action-btn:hover { background: #2563eb; }
+
+    .end-session-btn {
+      width: 100%;
+      background: #8b5cf6;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .end-session-btn:hover { background: #7c3aed; }
+
+    textarea {
+      width: 100%;
+      height: 250px;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 10px;
+      background: #16161a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    textarea:focus {
+      outline: 1px solid var(--accent-char);
+    }
+
+    .chart-header {
+      font-size: 18px;
+      font-weight: bold;
+      text-anchor: center;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .chart-layout {
+      display: flex;
+      gap: 20px;
+    }
+
+    .svg-container {
+      flex: 1;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .legend {
+      width: 240px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      height: fit-content;
+      max-height: 600px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.2);
+    }
+    .legend-title {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .legend-box {
+      width: 14px;
+      height: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 1000px) {
+      .app-container { grid-template-columns: 1fr; }
+      .chart-layout { flex-direction: column; }
+      .legend { width: 100%; max-height: none; }
+    }
+  </style>
 </head>
 <body>
 
-  <main class="app-container">
-    <section class="sidebar">
+  <div class="app-container">
+    <!-- LEFT PANEL -->
+    <div>
       <div class="card">
-        <div class="section-header">
-          <h3>Players</h3>
-          <button id="shareSettingsBtn" class="btn-share">Share Roster Settings</button>
-        </div>
+        <h2>1. Click Player(s)</h2>
         <div id="charButtons" class="btn-grid"></div>
         <div class="control-row">
-          <input type="text" id="customCharInput" placeholder="Add player name...">
-          <button id="addCharBtn" class="btn-secondary">Add</button>
-          <button id="removeCharBtn" class="btn-danger">Remove Selected</button>
+          <input type="text" id="customCharInput" placeholder="Add new player name...">
+          <button class="btn-secondary" onclick="addCustomChar()">Add</button>
+          <button class="btn-danger" onclick="removeSelectedChars()">Remove Selected</button>
         </div>
 
-        <h3>Mechanics</h3>
+        <h2>2. Click Mechanic</h2>
         <div id="mechButtons" class="btn-grid"></div>
         <div class="control-row">
-          <input type="text" id="customMechInput" placeholder="Add mechanic name...">
-          <button id="addMechBtn" class="btn-secondary">Add</button>
-          <button id="removeMechBtn" class="btn-danger">Remove Selected</button>
+          <input type="text" id="customMechInput" placeholder="Add new mechanic name...">
+          <button class="btn-secondary" onclick="addCustomMech()">Add</button>
+          <button class="btn-danger" onclick="removeSelectedMech()">Remove Selected</button>
         </div>
 
-        <button id="addLogBtn" class="add-btn">+ Record Wipe Entry</button>
+        <button class="btn-share" onclick="shareSettings()">🔗 Export / Share List Settings URL</button>
+        <button class="add-btn" onclick="addLogEntry()">+ Add To Log & Update Graph</button>
       </div>
 
       <div class="card">
-        <h3>Current Session Log</h3>
-        <div class="file-status-banner">
-          <span id="statusText">No master log linked</span>
+        <h2>Current Session Log</h2>
+        <div id="statusBanner" class="file-status-banner">
+          <span id="statusText">No master log linked (Will create/select file on export)</span>
         </div>
-        <textarea id="logTextarea" spellcheck="false" placeholder="Wipe entries will appear here..."></textarea>
+        <textarea id="logTextarea" spellcheck="false" placeholder="Current session wipe entries will appear here..."></textarea>
         
         <div class="action-row">
-          <button id="loadLogBtn" class="action-btn">Link Existing Log (.txt)</button>
+          <button class="action-btn" onclick="loadPreviousLog()">Link Existing .txt File</button>
         </div>
-        <button id="endSessionBtn" class="end-session-btn">Export & Append Session</button>
+        <button class="end-session-btn" onclick="endSessionAndSave()">End Session & Append to .txt File</button>
       </div>
-    </section>
+    </div>
 
-    <section class="card chart-section">
+    <!-- RIGHT PANEL -->
+    <div class="card">
       <div class="chart-header">Player Fault Breakdown</div>
-      <div class="chart-container">
-        <canvas id="wipeChart"></canvas>
+      <div class="chart-layout">
+        <div class="svg-container">
+          <svg id="chartSvg" viewBox="0 0 600 250"></svg>
+        </div>
+        <div class="legend">
+          <div class="legend-title">Mechanic Legend</div>
+          <div id="legendBox"></div>
+        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
-  <input type="file" id="fileInput" accept=".txt" hidden>
+  <input type="file" id="fileInput" accept=".txt" style="display: none;" onchange="handleFileSelect(event)">
 
-  <script type="module" src="js/app.js"></script>
+  <script>
+    const defaultCharList = ["Nafi", "Valuri", "Rumpy", "Ventus", "Ven", "Rym", "Lily", "Reila", "PF1", "PF2", "Tanks", "DPS", "Healers"];
+    const defaultMechList = [
+      "Arrows", "Blackhole", "DC", "Damage Down", "Forsaken",
+      "Graven 1", "Graven 2", "Graven 3", "Knockback", "Laser",
+      "Limitcut", "Mit Miss", "Overkill", "Slap Happy", "Stomps",
+      "Tankbuster", "Tethers"
+    ];
+
+    // Load from URL hash if provided
+    function loadFromUrl() {
+      if (window.location.hash) {
+        try {
+          const hashData = JSON.parse(decodeURIComponent(window.location.hash.substring(1)));
+          if (hashData.players && hashData.mechanics) {
+            localStorage.setItem('ffxiv_charList', JSON.stringify(hashData.players));
+            localStorage.setItem('ffxiv_mechList', JSON.stringify(hashData.mechanics));
+            alert("Loaded player and mechanic list settings from shared URL!");
+          }
+        } catch (e) {
+          console.error("Invalid URL settings format", e);
+        }
+      }
+    }
+
+    loadFromUrl();
+
+    let charList = JSON.parse(localStorage.getItem('ffxiv_charList')) || defaultCharList;
+    let mechList = JSON.parse(localStorage.getItem('ffxiv_mechList')) || defaultMechList;
+
+    // Expanded 32-color palette with distinct tones and zero overlaps
+    const palette = [
+      '#60a5fa', '#34d399', '#a78bfa', '#f472b6', '#facc15', '#38bdf8', 
+      '#fb923c', '#f87171', '#a3e635', '#c084fc', '#818cf8', '#2dd4bf', 
+      '#fbbf24', '#e879f9', '#4ade80', '#f43f5e', '#0284c7', '#059669', 
+      '#7c3aed', '#db2777', '#ca8a04', '#0891b2', '#ea580c', '#dc2626', 
+      '#65a30d', '#9333ea', '#4f46e5', '#0d9488', '#d97706', '#c026d3', 
+      '#16a34a', '#e11d48'
+    ];
+
+    const globalMechColorMap = {};
+    let fileHandle = null;
+    let fallbackFileObj = null;
+
+    function getMechanicColor(mechName) {
+      if (!globalMechColorMap[mechName]) {
+        const index = Object.keys(globalMechColorMap).length;
+        globalMechColorMap[mechName] = palette[index % palette.length];
+      }
+      return globalMechColorMap[mechName];
+    }
+
+    let selectedChars = [];
+    let selectedMech = null;
+
+    const textarea = document.getElementById('logTextarea');
+    textarea.value = "";
+
+    function saveState() {
+      localStorage.setItem('ffxiv_charList', JSON.stringify(charList));
+      localStorage.setItem('ffxiv_mechList', JSON.stringify(mechList));
+    }
+
+    function shareSettings() {
+      const payload = { players: charList, mechanics: mechList };
+      const encoded = encodeURIComponent(JSON.stringify(payload));
+      const shareableUrl = `${window.location.origin}${window.location.pathname}#${encoded}`;
+      
+      navigator.clipboard.writeText(shareableUrl).then(() => {
+        alert("Shareable URL copied to clipboard! Anyone opening this URL will get your updated player/mechanic buttons.");
+      }).catch(() => {
+        prompt("Copy this URL to share your button settings:", shareableUrl);
+      });
+    }
+
+    function renderCharButtons() {
+      const charContainer = document.getElementById('charButtons');
+      charContainer.innerHTML = charList.map(c => `
+        <button class="chip ${selectedChars.includes(c) ? 'selected-char' : ''}" onclick="toggleChar('${c}')">${c}</button>
+      `).join('');
+    }
+
+    function renderMechButtons() {
+      const mechContainer = document.getElementById('mechButtons');
+      mechContainer.innerHTML = mechList.map(m => `
+        <button class="chip ${selectedMech === m ? 'selected-mech' : ''}" onclick="selectMech('${m}')">${m}</button>
+      `).join('');
+    }
+
+    function toggleChar(name) {
+      if (selectedChars.includes(name)) {
+        selectedChars = selectedChars.filter(c => c !== name);
+      } else {
+        selectedChars.push(name);
+      }
+      renderCharButtons();
+    }
+
+    function removeSelectedChars() {
+      if (selectedChars.length === 0) return alert("Select one or more players to remove.");
+      charList = charList.filter(c => !selectedChars.includes(c));
+      selectedChars = [];
+      saveState();
+      renderCharButtons();
+    }
+
+    function addCustomChar() {
+      const input = document.getElementById('customCharInput');
+      const newChar = input.value.trim();
+      if (!newChar) return;
+
+      if (!charList.includes(newChar)) {
+        charList.push(newChar);
+        saveState();
+        renderCharButtons();
+      }
+      input.value = '';
+    }
+
+    function selectMech(name) {
+      if (selectedMech === name) {
+        selectedMech = null;
+      } else {
+        selectedMech = name;
+      }
+      renderMechButtons();
+    }
+
+    function removeSelectedMech() {
+      if (!selectedMech) return alert("Select a mechanic to remove.");
+      mechList = mechList.filter(m => m !== selectedMech);
+      selectedMech = null;
+      saveState();
+      renderMechButtons();
+    }
+
+    function addCustomMech() {
+      const input = document.getElementById('customMechInput');
+      const newMech = input.value.trim();
+      if (!newMech) return;
+
+      if (!mechList.includes(newMech)) {
+        mechList.push(newMech);
+        mechList.sort();
+        saveState();
+        renderMechButtons();
+      }
+      input.value = '';
+    }
+
+    function addLogEntry() {
+      if (selectedChars.length === 0) return alert("Please select at least one player.");
+      if (!selectedMech) return alert("Please select a mechanic.");
+
+      const playersStr = selectedChars.join('/');
+      const newLine = `${playersStr}: ${selectedMech}`;
+
+      if (textarea.value.trim() === "") {
+        textarea.value = newLine;
+      } else {
+        textarea.value = textarea.value.trim() + "\n" + newLine;
+      }
+
+      selectedChars = [];
+      selectedMech = null;
+      renderCharButtons();
+      renderMechButtons();
+
+      drawGraph();
+    }
+
+    async function loadPreviousLog() {
+      if ('showOpenFilePicker' in window) {
+        try {
+          [fileHandle] = await window.showOpenFilePicker({
+            types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+          });
+          const file = await fileHandle.getFile();
+          document.getElementById('statusText').innerText = `Linked File: ${file.name}`;
+          alert(`Linked master log file: ${file.name}`);
+        } catch (err) {}
+      } else {
+        document.getElementById('fileInput').click();
+      }
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      fallbackFileObj = file;
+      document.getElementById('statusText').innerText = `Linked File: ${file.name}`;
+      alert(`Linked master log file: ${file.name}`);
+    }
+
+    async function endSessionAndSave() {
+      const currentSessionText = textarea.value.trim();
+      if (!currentSessionText) return alert("Current session is empty. Add entries before ending.");
+
+      const separator = "-----------------------------------------------------------";
+      let existingContent = "";
+
+      if ('showSaveFilePicker' in window) {
+        try {
+          if (!fileHandle) {
+            [fileHandle] = await window.showOpenFilePicker({
+              types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+            }).catch(async () => {
+              fileHandle = await window.showSaveFilePicker({
+                suggestedName: 'wipe_log.txt',
+                types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+              });
+            });
+          }
+
+          if (fileHandle) {
+            try {
+              const currentDiskFile = await fileHandle.getFile();
+              existingContent = await currentDiskFile.text();
+            } catch (rErr) {
+              existingContent = "";
+            }
+          }
+
+          let fullMergedLog = "";
+          if (existingContent.trim()) {
+            fullMergedLog = existingContent.trim() + "\n" + separator + "\n" + currentSessionText;
+          } else {
+            fullMergedLog = currentSessionText;
+          }
+
+          const writable = await fileHandle.createWritable();
+          await writable.write(fullMergedLog);
+          await writable.close();
+
+          alert("Session appended to file on disk successfully!");
+          
+          textarea.value = "";
+          drawGraph();
+        } catch (err) {}
+      } else {
+        if (fallbackFileObj) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            existingContent = e.target.result;
+            downloadMergedFile(existingContent, currentSessionText, separator);
+          };
+          reader.readAsText(fallbackFileObj);
+        } else {
+          downloadMergedFile("", currentSessionText, separator);
+        }
+      }
+    }
+
+    function downloadMergedFile(existing, session, sep) {
+      let fullText = "";
+      if (existing.trim()) {
+        fullText = existing.trim() + "\n" + sep + "\n" + session;
+      } else {
+        fullText = session;
+      }
+
+      const blob = new Blob([fullText], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'wipe_log.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      textarea.value = "";
+      drawGraph();
+    }
+
+    function parseData() {
+      const text = textarea.value;
+      const lines = text.split('\n');
+
+      const playerData = {};
+      const mechanicSet = new Set();
+      const playerTotals = {};
+
+      lines.forEach(line => {
+        if (!line.includes(':') || line.startsWith('---')) return;
+        const [rawPlayers, rawMech] = line.split(':');
+        if (!rawPlayers || !rawMech) return;
+
+        const mech = rawMech.trim();
+        if (!mech) return;
+
+        mechanicSet.add(mech);
+        const players = rawPlayers.split('/').map(p => p.trim()).filter(Boolean);
+
+        players.forEach(p => {
+          if (!playerData[p]) {
+            playerData[p] = {};
+            playerTotals[p] = 0;
+          }
+          playerData[p][mech] = (playerData[p][mech] || 0) + 1;
+          playerTotals[p] += 1;
+        });
+      });
+
+      const playerOrder = Object.keys(playerData).sort((a, b) => {
+        if (playerTotals[b] !== playerTotals[a]) {
+          return playerTotals[b] - playerTotals[a];
+        }
+        return a.localeCompare(b);
+      });
+
+      return { playerData, playerOrder, mechanics: Array.from(mechanicSet) };
+    }
+
+    function drawGraph() {
+      const { playerData, playerOrder, mechanics } = parseData();
+      const svg = document.getElementById('chartSvg');
+      const legendContainer = document.getElementById('legendBox');
+
+      if (playerOrder.length === 0) {
+        svg.setAttribute('viewBox', '0 0 600 200');
+        svg.innerHTML = '<text x="300" y="100" font-size="14" fill="#666677" text-anchor="middle">No current session entries yet. Select players and a mechanic to add data.</text>';
+        legendContainer.innerHTML = '<span style="color:#666677; font-size: 12px; display: block; text-align: center;">No active mechanics</span>';
+        return;
+      }
+
+      let maxErrors = 0;
+      playerOrder.forEach(p => {
+        const total = Object.values(playerData[p]).reduce((a, b) => a + b, 0);
+        if (total > maxErrors) maxErrors = total;
+      });
+      const xMax = Math.max(3, Math.ceil(maxErrors));
+
+      const rowHeight = 32;
+      const labelWidth = 90;
+      const chartWidth = 500;
+      const svgWidth = 620;
+      const svgHeight = Math.max(200, playerOrder.length * rowHeight + 60);
+
+      svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+      let html = '';
+
+      for (let i = 0; i <= xMax; i++) {
+        const xPos = labelWidth + (i / xMax) * (chartWidth - labelWidth);
+        html += `<line x1="${xPos}" y1="0" x2="${xPos}" y2="${playerOrder.length * rowHeight}" stroke="#33333d" stroke-width="1" />`;
+        html += `<text x="${xPos}" y="${playerOrder.length * rowHeight + 18}" font-size="11" fill="#a0a0b0" text-anchor="middle">${i}</text>`;
+      }
+      
+      html += `<text x="${(labelWidth + chartWidth) / 2}" y="${playerOrder.length * rowHeight + 42}" font-size="12" fill="#e1e1e6" text-anchor="middle" font-weight="bold">Number of Errors</text>`;
+
+      playerOrder.forEach((player, pIdx) => {
+        const yPos = pIdx * rowHeight;
+
+        html += `<text x="${labelWidth - 8}" y="${yPos + 20}" font-size="12" fill="#e1e1e6" text-anchor="end" font-weight="500">${player}</text>`;
+
+        let currentX = labelWidth;
+        mechanics.forEach(m => {
+          const count = playerData[player][m] || 0;
+          if (count > 0) {
+            const barW = (count / xMax) * (chartWidth - labelWidth);
+            const color = getMechanicColor(m);
+            html += `<rect x="${currentX}" y="${yPos + 5}" width="${barW}" height="${rowHeight - 10}" fill="${color}" stroke="#121214" stroke-width="1"><title>${player} - ${m}: ${count}</title></rect>`;
+            currentX += barW;
+          }
+        });
+      });
+
+      svg.innerHTML = html;
+
+      legendContainer.innerHTML = mechanics.map(m => `
+        <div class="legend-row">
+          <div class="legend-box" style="background-color: ${getMechanicColor(m)}"></div>
+          <span>${m}</span>
+        </div>
+      `).join('');
+    }
+
+    textarea.addEventListener('input', drawGraph);
+
+    renderCharButtons();
+    renderMechButtons();
+    drawGraph();
+  </script>
 </body>
 </html>
