@@ -133,20 +133,6 @@
     }
     .btn-secondary:hover { background: #374151; }
 
-    .btn-share {
-      width: 100%;
-      background: #3b82f6;
-      color: #fff;
-      border: none;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      margin-bottom: 14px;
-    }
-    .btn-share:hover { background: #2563eb; }
-
     .btn-danger {
       background: rgba(239, 68, 68, 0.2);
       color: #f87171;
@@ -249,26 +235,34 @@
       overflow: visible;
     }
 
-    /* Clean Legend with no outer card border or title padding */
     .legend {
-      width: 200px;
-      padding: 0;
+      width: 240px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
       height: fit-content;
       max-height: 600px;
       overflow-y: auto;
-      background: transparent;
+      background: rgba(0,0,0,0.2);
+    }
+    .legend-title {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--text);
     }
     .legend-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-size: 12px;
-      color: var(--text);
     }
     .legend-box {
-      width: 12px;
+      width: 14px;
       height: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
       flex-shrink: 0;
     }
 
@@ -301,7 +295,6 @@
           <button class="btn-danger" onclick="removeSelectedMech()">Remove Selected</button>
         </div>
 
-        <button class="btn-share" onclick="shareSettings()">🔗 Export / Share List Settings URL</button>
         <button class="add-btn" onclick="addLogEntry()">+ Add To Log & Update Graph</button>
       </div>
 
@@ -327,6 +320,7 @@
           <svg id="chartSvg" viewBox="0 0 600 250"></svg>
         </div>
         <div class="legend">
+          <div class="legend-title">Mechanic Legend</div>
           <div id="legendBox"></div>
         </div>
       </div>
@@ -336,41 +330,23 @@
   <input type="file" id="fileInput" accept=".txt" style="display: none;" onchange="handleFileSelect(event)">
 
   <script>
-    const defaultCharList = ["Nafi", "Valuri", "Rumpy", "Ventus", "Ven", "Rym", "Lily", "Reila", "PF1", "PF2", "Tanks", "DPS", "Healers"];
+    const defaultCharList = ["Nafi", "Valuri", "Rumpy", "Ventus", "Ven", "Rym", "Lily", "Reila", "PF1", "PF2"];
     const defaultMechList = [
-      "Arrows", "Blackhole", "DC", "Damage Down", "Forsaken",
-      "Graven 1", "Graven 2", "Graven 3", "Knockback", "Laser",
-      "Limitcut", "Mit Miss", "Overkill", "Slap Happy", "Stomps",
-      "Tankbuster", "Tethers"
+      "Arrows", "Blackhole", "Damage Down", "Forsaken", "Graven 1", "Graven 2",
+      "Graven 3", "Knockback", "Laser", "Mit Miss", "Overkill", "P1 Mechanics",
+      "P2 Mechanics", "P3 Mechanics", "Tankbuster", "Tethers"
     ];
-
-    function loadFromUrl() {
-      if (window.location.hash) {
-        try {
-          const hashData = JSON.parse(decodeURIComponent(window.location.hash.substring(1)));
-          if (hashData.players && hashData.mechanics) {
-            localStorage.setItem('ffxiv_charList', JSON.stringify(hashData.players));
-            localStorage.setItem('ffxiv_mechList', JSON.stringify(hashData.mechanics));
-            alert("Loaded player and mechanic list settings from shared URL!");
-          }
-        } catch (e) {
-          console.error("Invalid URL settings format", e);
-        }
-      }
-    }
-
-    loadFromUrl();
 
     let charList = JSON.parse(localStorage.getItem('ffxiv_charList')) || defaultCharList;
     let mechList = JSON.parse(localStorage.getItem('ffxiv_mechList')) || defaultMechList;
 
-    // 32-color palette matching the original dark, desaturated tone scheme
+    // Expanded 32-color palette matching original dark/desaturated theme tones
     const palette = [
       '#41658a', '#8a4b56', '#9c6b3b', '#857e4b', '#486e6d', '#58437d', '#71757a',
-      '#41658a', '#88587d', '#517a63', '#a17852', '#7a4242', '#3f707a', '#785f37',
-      '#585e8a', '#7d6171', '#406354', '#8a6e59', '#634b6b', '#687349', '#536e78',
-      '#8c5443', '#495a7d', '#706043', '#3d6e61', '#7a4c66', '#5d6945', '#735741',
-      '#4b6875', '#805959', '#546b59', '#695370'
+      '#3f707a', '#88587d', '#517a63', '#a17852', '#7a4242', '#785f37', '#585e8a',
+      '#7d6171', '#406354', '#8a6e59', '#634b6b', '#687349', '#536e78', '#8c5443',
+      '#495a7d', '#706043', '#3d6e61', '#7a4c66', '#5d6945', '#735741', '#4b6875',
+      '#805959', '#546b59', '#695370', '#5c6470'
     ];
 
     const globalMechColorMap = {};
@@ -394,18 +370,6 @@
     function saveState() {
       localStorage.setItem('ffxiv_charList', JSON.stringify(charList));
       localStorage.setItem('ffxiv_mechList', JSON.stringify(mechList));
-    }
-
-    function shareSettings() {
-      const payload = { players: charList, mechanics: mechList };
-      const encoded = encodeURIComponent(JSON.stringify(payload));
-      const shareableUrl = `${window.location.origin}${window.location.pathname}#${encoded}`;
-      
-      navigator.clipboard.writeText(shareableUrl).then(() => {
-        alert("Shareable URL copied to clipboard! Anyone opening this URL will get your updated player/mechanic buttons.");
-      }).catch(() => {
-        prompt("Copy this URL to share your button settings:", shareableUrl);
-      });
     }
 
     function renderCharButtons() {
@@ -652,7 +616,7 @@
       if (playerOrder.length === 0) {
         svg.setAttribute('viewBox', '0 0 600 200');
         svg.innerHTML = '<text x="300" y="100" font-size="14" fill="#666677" text-anchor="middle">No current session entries yet. Select players and a mechanic to add data.</text>';
-        legendContainer.innerHTML = '';
+        legendContainer.innerHTML = '<span style="color:#666677; font-size: 12px; display: block; text-align: center;">No active mechanics</span>';
         return;
       }
 
