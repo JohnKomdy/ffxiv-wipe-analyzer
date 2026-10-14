@@ -249,34 +249,26 @@
       overflow: visible;
     }
 
+    /* Clean Legend with no outer card border or title padding */
     .legend {
-      width: 240px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px;
+      width: 200px;
+      padding: 0;
       height: fit-content;
       max-height: 600px;
       overflow-y: auto;
-      background: rgba(0,0,0,0.2);
-    }
-    .legend-title {
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 14px;
-      color: var(--text);
+      background: transparent;
     }
     .legend-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-size: 12px;
+      color: var(--text);
     }
     .legend-box {
-      width: 14px;
+      width: 12px;
       height: 12px;
-      border: 1px solid rgba(255,255,255,0.2);
       flex-shrink: 0;
     }
 
@@ -335,7 +327,6 @@
           <svg id="chartSvg" viewBox="0 0 600 250"></svg>
         </div>
         <div class="legend">
-          <div class="legend-title">Mechanic Legend</div>
           <div id="legendBox"></div>
         </div>
       </div>
@@ -353,7 +344,6 @@
       "Tankbuster", "Tethers"
     ];
 
-    // Load from URL hash if provided
     function loadFromUrl() {
       if (window.location.hash) {
         try {
@@ -374,14 +364,13 @@
     let charList = JSON.parse(localStorage.getItem('ffxiv_charList')) || defaultCharList;
     let mechList = JSON.parse(localStorage.getItem('ffxiv_mechList')) || defaultMechList;
 
-    // Expanded 32-color palette with distinct tones and zero overlaps
+    // 32-color palette matching the original dark, desaturated tone scheme
     const palette = [
-      '#60a5fa', '#34d399', '#a78bfa', '#f472b6', '#facc15', '#38bdf8', 
-      '#fb923c', '#f87171', '#a3e635', '#c084fc', '#818cf8', '#2dd4bf', 
-      '#fbbf24', '#e879f9', '#4ade80', '#f43f5e', '#0284c7', '#059669', 
-      '#7c3aed', '#db2777', '#ca8a04', '#0891b2', '#ea580c', '#dc2626', 
-      '#65a30d', '#9333ea', '#4f46e5', '#0d9488', '#d97706', '#c026d3', 
-      '#16a34a', '#e11d48'
+      '#41658a', '#8a4b56', '#9c6b3b', '#857e4b', '#486e6d', '#58437d', '#71757a',
+      '#41658a', '#88587d', '#517a63', '#a17852', '#7a4242', '#3f707a', '#785f37',
+      '#585e8a', '#7d6171', '#406354', '#8a6e59', '#634b6b', '#687349', '#536e78',
+      '#8c5443', '#495a7d', '#706043', '#3d6e61', '#7a4c66', '#5d6945', '#735741',
+      '#4b6875', '#805959', '#546b59', '#695370'
     ];
 
     const globalMechColorMap = {};
@@ -663,7 +652,7 @@
       if (playerOrder.length === 0) {
         svg.setAttribute('viewBox', '0 0 600 200');
         svg.innerHTML = '<text x="300" y="100" font-size="14" fill="#666677" text-anchor="middle">No current session entries yet. Select players and a mechanic to add data.</text>';
-        legendContainer.innerHTML = '<span style="color:#666677; font-size: 12px; display: block; text-align: center;">No active mechanics</span>';
+        legendContainer.innerHTML = '';
         return;
       }
 
