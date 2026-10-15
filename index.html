@@ -235,7 +235,6 @@
       overflow: visible;
     }
 
-    /* Compact Legend Width */
     .legend {
       width: 120px;
       padding: 0;
@@ -253,9 +252,10 @@
       font-size: 12px;
     }
     .legend-box {
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.2);
     }
 
     @media (max-width: 1000px) {
@@ -331,6 +331,7 @@
     let charList = JSON.parse(localStorage.getItem('ffxiv_charList')) || defaultCharList;
     let mechList = JSON.parse(localStorage.getItem('ffxiv_mechList')) || defaultMechList;
 
+    // Expanded 32-color palette matching original dark/desaturated theme tones
     const palette = [
       '#41658a', '#8a4b56', '#9c6b3b', '#857e4b', '#486e6d', '#58437d', '#71757a',
       '#3f707a', '#88587d', '#517a63', '#a17852', '#7a4242', '#785f37', '#585e8a',
@@ -339,14 +340,35 @@
       '#805959', '#546b59', '#695370', '#5c6470'
     ];
 
+    // Pattern generator definitions (8 distinct overlay types)
+    const patternTypes = [
+      'stripes-forward', // 1: Forward Diagonal
+      'polkadots',       // 2: Polka Dots
+      'crosshatch',      // 3: Crosshatch
+      'verticals',       // 4: Vertical Lines
+      'checkered',       // 5: Checkered
+      'grid',            // 6: Grid
+      'stripes-back',    // 7: Backward Diagonal
+      'dense-dots'       // 8: Dense Dots
+    ];
+
     const globalMechColorMap = {};
     let fileHandle = null;
     let fallbackFileObj = null;
 
-    function getMechanicColor(mechName) {
+    function getMechanicVisuals(mechName) {
       if (!globalMechColorMap[mechName]) {
         const index = Object.keys(globalMechColorMap).length;
-        globalMechColorMap[mechName] = palette[index % palette.length];
+        const color = palette[index % palette.length];
+        const patternType = patternTypes[index % patternTypes.length];
+        const patternId = `pattern-${index}-${mechName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        globalMechColorMap[mechName] = {
+          color,
+          patternType,
+          patternId,
+          index
+        };
       }
       return globalMechColorMap[mechName];
     }
@@ -598,6 +620,52 @@
       return { playerData, playerOrder, mechanics: Array.from(mechanicSet) };
     }
 
+    function buildPatternDefs(mechanics) {
+      let defs = '<defs>';
+      mechanics.forEach(m => {
+        const vis = getMechanicVisuals(m);
+        const pId = vis.patternId;
+        const strokeColor = 'rgba(255,255,255,0.35)';
+
+        switch (vis.patternType) {
+          case 'stripes-forward':
+            defs += `<pattern id="${pId}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M-2,2 L2,-2 M0,8 L8,0 M6,10 L10,6" stroke="${strokeColor}" stroke-width="1.5"/></pattern>`;
+            break;
+          case 'polkadots':
+            defs += `<pattern id="${pId}" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.5" fill="${strokeColor}"/></pattern>`;
+            break;
+          case 'crosshatch':
+            defs += `<pattern id="${pId}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0,8 L8,0 M0,0 L8,8" stroke="${strokeColor}" stroke-width="1"/></pattern>`;
+            break;
+          case 'verticals':
+            defs += `<pattern id="${pId}" width="6" height="6" patternUnits="userSpaceOnUse"><line x1="3" y1="0" x2="3" y2="6" stroke="${strokeColor}" stroke-width="1.5"/></pattern>`;
+            break;
+          case 'checkered':
+            defs += `<pattern id="${pId}" width="8" height="8" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="4" height="4" fill="${strokeColor}"/><rect x="4" y="4" width="4" height="4" fill="${strokeColor}"/></pattern>`;
+            break;
+          case 'grid':
+            defs += `<pattern id="${pId}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M 8 0 L 0 0 0 8" fill="none" stroke="${strokeColor}" stroke-width="1"/></pattern>`;
+            break;
+          case 'stripes-back':
+            defs += `<pattern id="${pId}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0,0 L8,8 M-2,6 L2,10 M6,-2 L10,2" stroke="${strokeColor}" stroke-width="1.5"/></pattern>`;
+            break;
+          case 'dense-dots':
+            defs += `<pattern id="${pId}" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${strokeColor}"/><circle cx="5" cy="5" r="1" fill="${strokeColor}"/></pattern>`;
+            break;
+        }
+      });
+      defs += '</defs>';
+      return defs;
+    }
+
+    function createPatternSvgPreview(mechName) {
+      const vis = getMechanicVisuals(mechName);
+      const defs = buildPatternDefs([mechName]);
+      return `data:image/svg+xml;utf8,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14">${defs}<rect width="14" height="14" fill="${vis.color}"/><rect width="14" height="14" fill="url(#${vis.patternId})"/></svg>`
+      )}`;
+    }
+
     function drawGraph() {
       const { playerData, playerOrder, mechanics } = parseData();
       const svg = document.getElementById('chartSvg');
@@ -619,13 +687,13 @@
 
       const rowHeight = 32;
       const labelWidth = 80;
-      const chartWidth = 660; // Expanded chart width
+      const chartWidth = 660;
       const svgWidth = 680;
       const svgHeight = Math.max(200, playerOrder.length * rowHeight + 60);
 
       svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
-      let html = '';
+      let html = buildPatternDefs(mechanics);
 
       for (let i = 0; i <= xMax; i++) {
         const xPos = labelWidth + (i / xMax) * (chartWidth - labelWidth);
@@ -645,8 +713,11 @@
           const count = playerData[player][m] || 0;
           if (count > 0) {
             const barW = (count / xMax) * (chartWidth - labelWidth);
-            const color = getMechanicColor(m);
-            html += `<rect x="${currentX}" y="${yPos + 5}" width="${barW}" height="${rowHeight - 10}" fill="${color}" stroke="#121214" stroke-width="1"><title>${player} - ${m}: ${count}</title></rect>`;
+            const vis = getMechanicVisuals(m);
+            // Base color bar
+            html += `<rect x="${currentX}" y="${yPos + 5}" width="${barW}" height="${rowHeight - 10}" fill="${vis.color}" stroke="#121214" stroke-width="1"><title>${player} - ${m}: ${count}</title></rect>`;
+            // Overlay pattern bar
+            html += `<rect x="${currentX}" y="${yPos + 5}" width="${barW}" height="${rowHeight - 10}" fill="url(#${vis.patternId})" pointer-events="none"></rect>`;
             currentX += barW;
           }
         });
@@ -654,12 +725,15 @@
 
       svg.innerHTML = html;
 
-      legendContainer.innerHTML = mechanics.map(m => `
-        <div class="legend-row">
-          <div class="legend-box" style="background-color: ${getMechanicColor(m)}"></div>
-          <span>${m}</span>
-        </div>
-      `).join('');
+      legendContainer.innerHTML = mechanics.map(m => {
+        const bgDataUrl = createPatternSvgPreview(m);
+        return `
+          <div class="legend-row">
+            <div class="legend-box" style="background-image: url('${bgDataUrl}'); background-size: cover;"></div>
+            <span>${m}</span>
+          </div>
+        `;
+      }).join('');
     }
 
     textarea.addEventListener('input', drawGraph);
