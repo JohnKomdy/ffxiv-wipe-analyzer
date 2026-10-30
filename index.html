@@ -235,12 +235,11 @@
       overflow: visible;
     }
 
+    /* Legend stretches downward completely without scrolling */
     .legend {
-      width: 120px;
+      width: 150px;
       padding: 0;
       height: fit-content;
-      max-height: 600px;
-      overflow-y: auto;
       background: transparent;
       border: none;
     }
@@ -261,7 +260,7 @@
     @media (max-width: 1000px) {
       .app-container { grid-template-columns: 1fr; }
       .chart-layout { flex-direction: column; }
-      .legend { width: 100%; max-height: none; }
+      .legend { width: 100%; }
     }
   </style>
 </head>
@@ -331,7 +330,6 @@
     let charList = JSON.parse(localStorage.getItem('ffxiv_charList')) || defaultCharList;
     let mechList = JSON.parse(localStorage.getItem('ffxiv_mechList')) || defaultMechList;
 
-    // Expanded 32-color palette matching original dark/desaturated theme tones
     const palette = [
       '#41658a', '#8a4b56', '#9c6b3b', '#857e4b', '#486e6d', '#58437d', '#71757a',
       '#3f707a', '#88587d', '#517a63', '#a17852', '#7a4242', '#785f37', '#585e8a',
@@ -340,16 +338,9 @@
       '#805959', '#546b59', '#695370', '#5c6470'
     ];
 
-    // Pattern generator definitions (8 distinct overlay types)
     const patternTypes = [
-      'stripes-forward', // 1: Forward Diagonal
-      'polkadots',       // 2: Polka Dots
-      'crosshatch',      // 3: Crosshatch
-      'verticals',       // 4: Vertical Lines
-      'checkered',       // 5: Checkered
-      'grid',            // 6: Grid
-      'stripes-back',    // 7: Backward Diagonal
-      'dense-dots'       // 8: Dense Dots
+      'stripes-forward', 'polkadots', 'crosshatch', 'verticals', 
+      'checkered', 'grid', 'stripes-back', 'dense-dots'
     ];
 
     const globalMechColorMap = {};
@@ -363,12 +354,7 @@
         const patternType = patternTypes[index % patternTypes.length];
         const patternId = `pattern-${index}-${mechName.replace(/[^a-zA-Z0-9]/g, '_')}`;
         
-        globalMechColorMap[mechName] = {
-          color,
-          patternType,
-          patternId,
-          index
-        };
+        globalMechColorMap[mechName] = { color, patternType, patternId, index };
       }
       return globalMechColorMap[mechName];
     }
@@ -685,6 +671,12 @@
       });
       const xMax = Math.max(3, Math.ceil(maxErrors));
 
+      // Dynamic step calculation to prevent X-axis number crowding/overlapping
+      let xStep = 1;
+      if (xMax > 25) xStep = 2;
+      if (xMax > 50) xStep = 5;
+      if (xMax > 100) xStep = 10;
+
       const rowHeight = 32;
       const labelWidth = 80;
       const chartWidth = 660;
@@ -698,7 +690,9 @@
       for (let i = 0; i <= xMax; i++) {
         const xPos = labelWidth + (i / xMax) * (chartWidth - labelWidth);
         html += `<line x1="${xPos}" y1="0" x2="${xPos}" y2="${playerOrder.length * rowHeight}" stroke="#33333d" stroke-width="1" />`;
-        html += `<text x="${xPos}" y="${playerOrder.length * rowHeight + 18}" font-size="11" fill="#a0a0b0" text-anchor="middle">${i}</text>`;
+        if (i % xStep === 0 || i === xMax) {
+          html += `<text x="${xPos}" y="${playerOrder.length * rowHeight + 18}" font-size="11" fill="#a0a0b0" text-anchor="middle">${i}</text>`;
+        }
       }
       
       html += `<text x="${(labelWidth + chartWidth) / 2}" y="${playerOrder.length * rowHeight + 42}" font-size="12" fill="#e1e1e6" text-anchor="middle" font-weight="bold">Number of Errors</text>`;
@@ -714,9 +708,7 @@
           if (count > 0) {
             const barW = (count / xMax) * (chartWidth - labelWidth);
             const vis = getMechanicVisuals(m);
-            // Base color bar
             html += `<rect x="${currentX}" y="${yPos + 5}" width="${barW}" height="${rowHeight - 10}" fill="${vis.color}" stroke="#121214" stroke-width="1"><title>${player} - ${m}: ${count}</title></rect>`;
-            // Overlay pattern bar
             html += `<rect x="${currentX}" y="${yPos + 5}" width="${barW}" height="${rowHeight - 10}" fill="url(#${vis.patternId})" pointer-events="none"></rect>`;
             currentX += barW;
           }
